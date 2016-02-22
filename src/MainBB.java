@@ -4,7 +4,7 @@ public class MainBB {
 
         BallAndBeam bb = new BallAndBeam();
 
-        ReferenceGenerator refgen = new ReferenceGenerator(20.0, 4.0);
+        ReferenceGenerator refgen = new ReferenceGenerator(8);
         BallAndBeamRegul regul = new BallAndBeamRegul(refgen, bb, regulPriority);
 
         refgen.start();

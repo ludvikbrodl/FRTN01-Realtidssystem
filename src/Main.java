@@ -4,7 +4,7 @@ public class Main {
 		final int regulPriority = 8;
 		
 		Beam beam = new Beam();
-		ReferenceGenerator refgen = new ReferenceGenerator(5.0, 4.0);
+		ReferenceGenerator refgen = new ReferenceGenerator(8);
 		BeamRegul regul = new BeamRegul(refgen, beam, regulPriority);
 		
 		refgen.start();
