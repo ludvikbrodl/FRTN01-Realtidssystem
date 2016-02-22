@@ -38,7 +38,7 @@ public class PID {
     public synchronized double calculateOutput(double y, double yref) {
         this.y = y;
         this.e = yref - y;
-        this.D = ad*D - bd*(y - yOld);
+        this.D = ad * D - bd * (y - yOld);
         this.v = p.K * (p.Beta * yref - y) + I + D; // I is 0.0 if integratorOn is false
         return this.v;
     }
@@ -46,7 +46,7 @@ public class PID {
     // Updates the controller state.
     // Should use tracking-based anti-windup
     // Called from BallAndBeamRegul.
-    public synchronized void updateState(double u){
+    public synchronized void updateState(double u) {
         if (p.integratorOn) {
             I = I + (p.K * p.H / p.Ti) * e + (p.H / p.Tr) * (u - v);
         } else {
@@ -58,19 +58,33 @@ public class PID {
     // Returns the sampling interval expressed as a long.
     // Explicit type casting needed.
     public synchronized long getHMillis() {
-        return (long)(p.H * 1000.0);
+        return (long) (p.H * 1000.0);
     }
 
     // Sets the PIDParameters.
     // Called from PIDGUI.
     // Must clone newParameters.
-    public synchronized void setParameters(PIDParameters newParameters){
-        p = (PIDParameters)newParameters.clone();
-        ad = p.Td / (p.Td + p.N*p.H);
+    public synchronized void setParameters(PIDParameters newParameters) {
+        p = (PIDParameters) newParameters.clone();
+        ad = p.Td / (p.Td + p.N * p.H);
         bd = p.K * ad * p.N;
         if (!p.integratorOn) {
             I = 0.0;
         }
+    }
+
+    // PID
+
+    // Sets the I-part and D-part of the controller to 0.
+    // For example needed when changing controller mode.
+    public synchronized void reset() {
+        I = 0;
+        D = 0;
+    }
+
+    // Returns the current PIDParameters.
+    public synchronized PIDParameters getParameters() {
+        return p;
     }
 
 }
