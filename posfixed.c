@@ -29,20 +29,38 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <math.h>
 
-#define k 5
-#define ti 1
+#define l1 3369
+#define l2 1826
+#define lr 1826
+#define k1 2085
+#define k2 1274
+#define k3 3287
 
-#define beta 0.5
-#define h 0.05
-#define khti k*h/ti
+#define phi11 1018
+#define phi12 0
+#define phi21 255
+#define phi22 1024
+
+#define gamma1 115
+#define gamma2 14
+
+#define N 10
+#define I2F(x) (x << N)
+#define F2I(x) (x >> N)
+
+
 
 
 /* Controller parameters and variables (add your own code here) */
 int16_t ipart = 0;
 
 int8_t on = 0;                     /* 0=off, 1=on */
-int16_t r = 255;                   /* Reference, corresponds to +5.0 V */
+int16_t r = 250;                   /* Reference, corresponds to +5.0 V */
+int16_t x1, x2, v = 0;
+
+
 
 /** 
  * Write a character on the serial connection
@@ -58,6 +76,7 @@ static inline void put_char(char ch){
 static inline void writeOutput(int16_t val) {
   val += 512;
   OCR1AH = (uint8_t) (val>>8);
+
   OCR1AL = (uint8_t) val;
 }
 
@@ -104,10 +123,28 @@ ISR(TIMER2_COMP_vect){
   ctr = 0;
   if (on) {
     /* Insert your controller code here */
-    int16_t y = readInput('0');
-  	float u = k * r - k * y + ipart;
-  	writeOutput((int16_t)u);
-  	ipart += khti*(r-y);  	
+    int16_t y = readInput(1);
+    int16_t u = (int16_t) F2I((int32_t) lr*r - (int32_t) l1*x1 - (int32_t) l2*x2) - v;
+
+    if(u > 511) {
+      u = 511;
+    } else if (u < -512) {
+      u = -512;
+    }
+
+    writeOutput((int16_t)u);
+
+    int16_t e = (int16_t) (y - x2);
+    int32_t x1Temp = x1;
+    int32_t vTemp = 0;
+    x1 = (int16_t) F2I((int32_t)phi11*x1 + (int32_t)phi12*x2 + (int32_t)gamma1*(u+v) + (int32_t) k1*e);
+    x2 = (int16_t) F2I((int32_t)phi21*x1Temp + (int32_t)phi22*x2 + (int32_t)gamma2*(u+v) + (int32_t) k2*e);
+
+    vTemp = ((int32_t)k3 * e);
+    v += F2I(vTemp);
+
+    //u = u + (1 << (N-1));
+
   } else {                     
     writeOutput(0);     /* Off */
   }

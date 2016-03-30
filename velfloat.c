@@ -30,19 +30,20 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#define k 5
-#define ti 1
+#define k 2.6133 //must be in fixed
+#define ti 0.4523
 
 #define beta 0.5
 #define h 0.05
-#define khti k*h/ti
+#define khti (k*h/ti)
+
 
 
 /* Controller parameters and variables (add your own code here) */
 int16_t ipart = 0;
 
 int8_t on = 0;                     /* 0=off, 1=on */
-int16_t r = 255;                   /* Reference, corresponds to +5.0 V */
+int16_t r = 250;                   /* Reference, corresponds to +5.0 V */
 
 /** 
  * Write a character on the serial connection
@@ -104,10 +105,19 @@ ISR(TIMER2_COMP_vect){
   ctr = 0;
   if (on) {
     /* Insert your controller code here */
-    int16_t y = readInput('0');
-  	float u = k * r - k * y + ipart;
+    int16_t y = readInput(0);
+  	float u = k *beta * r - k * y + ipart;
+
+    if(u > 511) {
+      u = 511;
+    } else if (u < -512) {
+      u = -512;
+    }
+
   	writeOutput((int16_t)u);
-  	ipart += khti*(r-y);  	
+  	ipart += khti*(r-y);
+
+
   } else {                     
     writeOutput(0);     /* Off */
   }

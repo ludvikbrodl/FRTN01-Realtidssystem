@@ -30,17 +30,22 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <inttypes.h>
+#include <math.h>
 
-#define k ???? //must be in fixed
-#define ti ???? //must be in fixed
 
-#define kbeta ???? //must be in fixed
+
+
+#define k 2676 //must be in fixed
+#define ti 463 //must be in fixed
+
+#define kbeta 1338 //must be in fixed
 #define beta 0.5 //must be in fixed
 #define h 0.05
-#define khti k*h/ti ???? //must be in fixed
+#define khti 296//k*h/ti ???? must be in fixed
+
 #define N 10
-#define I2F(x) ((x) << N)
-#define F2I(x) ((x) >> N)
+#define I2F(x) (x << N)
+#define F2I(x) (x >> N)
 
 /* Controller parameters and variables (add your own code here) */
 int16_t ipart = 0;
@@ -108,12 +113,15 @@ ISR(TIMER2_COMP_vect){
   ctr = 0;
   if (on) {
     /* Insert your controller code here */
-    int16_t y = readInput('0');
+    int16_t y = readInput(0);
     int32_t u = (int32_t) kbeta*r;
     int32_t temp = (int32_t) k*y;
-    u = u - temp + ipart;
-    u = u + (1 << N-1);
-    u = u >> N;
+    u = u - temp;
+
+    u = u + (1 << (N-1));
+    u = F2I(u);
+    u = u + ipart;
+
     if(u > 511) {
       u = 511;
     } else if (u < -512) {
@@ -121,10 +129,7 @@ ISR(TIMER2_COMP_vect){
     }
 
   	writeOutput((int16_t)u);
-  	ipart += khti*(r-y);
-
-
-   
+  	ipart += F2I((int32_t)khti*(r-y));
 
   } else {                     
     writeOutput(0);     /* Off */

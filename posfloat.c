@@ -30,19 +30,33 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#define k 5
-#define ti 1
+#define l1 3.2898
+#define l2 1.783
+#define lr 1.783
+#define k1 2.0361
+#define k2 1.2440
+#define k3 3.2096
 
-#define beta 0.5
-#define h 0.05
-#define khti k*h/ti
+#define phi11 0.9940
+#define phi12 0
+#define phi21 0.2493
+#define phi22 1
+
+#define gamma1 0.1122
+#define gamma2 0.0140
+ 
+
+
 
 
 /* Controller parameters and variables (add your own code here) */
 int16_t ipart = 0;
 
 int8_t on = 0;                     /* 0=off, 1=on */
-int16_t r = 255;                   /* Reference, corresponds to +5.0 V */
+int16_t r = 50;                   /* Reference, corresponds to +5.0 V */
+float x1, x2, v = 0;
+
+
 
 /** 
  * Write a character on the serial connection
@@ -58,6 +72,7 @@ static inline void put_char(char ch){
 static inline void writeOutput(int16_t val) {
   val += 512;
   OCR1AH = (uint8_t) (val>>8);
+
   OCR1AL = (uint8_t) val;
 }
 
@@ -104,10 +119,21 @@ ISR(TIMER2_COMP_vect){
   ctr = 0;
   if (on) {
     /* Insert your controller code here */
-    int16_t y = readInput('0');
-  	float u = k * r - k * y + ipart;
+    int16_t y = readInput(1);
+  	float u = lr*r - l1*x1 - l2*x2 - v;
+    float e = y - x2;
+    float x1Temp = x1;
+    x1 = phi11*x1 + phi12*x2 + gamma1*(u+v) + k1*e;
+    x2 = phi21*x1Temp + phi22*x2 + gamma2*(u+v) + k2*e;
+    v = v + k3 * e;
+
+    if(u > 511) {
+      u = 511;
+    } else if (u < -512) {
+      u = -512;
+    }
+
   	writeOutput((int16_t)u);
-  	ipart += khti*(r-y);  	
   } else {                     
     writeOutput(0);     /* Off */
   }
